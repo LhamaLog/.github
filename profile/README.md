@@ -38,40 +38,34 @@ O **LhamaLog** recebe logs e traces das aplicações dos clientes pelo protocolo
 7. O **Core** é a API pública do front: assinatura, tenants, papéis, alertas e WebSocket.
 
 ```mermaid
-flowchart LR
-    subgraph Publico["🌐 Rede pública"]
-        APP["Aplicação do cliente<br/>(SDK OpenTelemetry)"]
+flowchart TB
+ subgraph Publico["🌐 Rede pública"]
+        APP["Aplicação do cliente<br>(SDK OpenTelemetry)"]
         FRONT["Front web"]
-        COLETOR["Coletor<br/>OTLP /v1/logs · /v1/traces"]
-        CORE["Core<br/>API pública · WebSocket"]
-    end
-
-    subgraph Interna["🔒 Rede interna"]
+        COLETOR["Coletor<br>OTLP"]
+        CORE["Core<br>API pública<br>WebSocket"]
+  end
+ subgraph Interna["🔒 Rede interna"]
         FILA[("Redis Streams")]
-        VARREDURA["Varredura<br/>@Scheduled + ShedLock"]
-        FINDER["Finder (Go)<br/>análise paralela · mascaramento"]
-        OCORRENCIA["Ocorrência<br/>+ Sugestão IA (Spring AI)"]
-        NOTIFICACAO["Notificação<br/>(somente saída)"]
+        VARREDURA["Varredura"]
+        FINDER["Finder"]
+        OCORRENCIA["Ocorrência<br>+ Sugestão IA"]
         MONGO[("MongoDB")]
         ES[("Elasticsearch")]
-    end
-
-    APP -- "OTLP + Bearer" --> COLETOR
+        Notificacao["Notificação"]
+  end
+    APP -- OTLP + Bearer --> COLETOR
     FRONT <--> CORE
-    COLETOR --> ES
-    COLETOR --> FILA
+    COLETOR --> ES & FILA & MONGO
     VARREDURA --> FILA
-    FILA --> FINDER
-    FINDER --> ES
-    FINDER --> FILA
-    FILA --> OCORRENCIA
-    OCORRENCIA --> FILA
-    FILA --> NOTIFICACAO
-    CORE <--> MONGO
-    VARREDURA <--> MONGO
+    FILA <--> FINDER
+    FINDER --> ES & MONGO
+    CORE <--> MONGO & VARREDURA & OCORRENCIA
     OCORRENCIA <--> MONGO
-    NOTIFICACAO -. "e-mail / push" .-> EXT["Destinatários"]
-    CORE <-. "eventos" .-> FILA
+    Notificacao -. Email /Push .-> Destinatario["Destinatario"]
+    MONGO --> Notificacao
+
+    CORE@{ shape: rect}
 ```
 
 > Somente **Core** e **Coletor** são expostos publicamente; os demais serviços ficam na rede interna.
