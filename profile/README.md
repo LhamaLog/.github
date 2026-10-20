@@ -57,13 +57,13 @@ flowchart TB
     APP -- OTLP + Bearer --> COLETOR
     FRONT <--> CORE
     COLETOR --> ES & FILA & MONGO
-    VARREDURA --> FILA
+    VARREDURA --> FILA & MONGO
     FILA <--> FINDER
     FINDER --> ES & MONGO
     CORE <--> MONGO & VARREDURA & OCORRENCIA
-    OCORRENCIA <--> MONGO
     Notificacao -. Email /Push .-> Destinatario["Destinatario"]
     MONGO --> Notificacao
+    OCORRENCIA --> MONGO
 
     CORE@{ shape: rect}
 ```
